@@ -1,101 +1,207 @@
+🍀 DealDrop
 
----
+DealDrop — A full-stack price tracking app that shows product price history, lets users track products, and sends email alerts when prices drop — built with Next.js App Router, Supabase, Recharts, and Tailwind CSS.
 
-## 📁 Tech Stack
+Live Demo: (Your Vercel URL here)
 
-- **Next.js (App Router)** — React framework for frontend + SSR  
-- **Supabase Auth & Database** — Backend auth + PostgreSQL  
-- **Tailwind CSS** — Utility-first styling  
-- **shadcn/ui** — UI component library  
-- **Lucide Icons** — SVG icons  
-- **Recharts** — Charting library
+🚀 Features
 
----
+🔐 Google & Email Authentication
 
-## 🧠 Getting Started (Local)
+🛍 Add / remove product URLs to track
 
-### 1. Clone the repo
-```bash
+📉 View price history with interactive charts
+
+📧 Email Price Drop Alerts
+
+🛠 Modern UI with Tailwind CSS + shadcn/ui
+
+🔒 Secure per-user data with Supabase RLS
+
+⚡ Instant price checks and notifications
+
+🧠 Tech Stack
+Layer	Tech
+Frontend	Next.js (App Router), React
+UI	Tailwind CSS, shadcn/ui, Recharts
+Backend	Supabase Auth & Database
+Alerts	Supabase Edge Functions / Cron / Email API
+⚙️ Local Setup
+1. Clone the Repo
 git clone https://github.com/Devraj2Singh/DealDrop.git
 cd DealDrop
+
 2. Install Dependencies
-bash
-Copy code
 npm install
 # or
-yarn install
+yarn
 # or
 pnpm install
-3. Create Supabase Project
-Go to https://app.supabase.com and create a new project.
 
-Grab the following from Supabase dashboard:
-✔ NEXT_PUBLIC_SUPABASE_URL
-✔ NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-4. Create .env.local
-Copy example and paste keys:
-
-ini
-Copy code
+3. Create .env.local
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-5. Run Dev Server
-bash
-Copy code
-npm run dev
-Open http://localhost:3000 in your browser.
+EMAIL_PROVIDER_API_KEY=your_email_service_api_key
 
-🗂 Supabase Setup
-Database
-Create a table products with fields including id, user_id, price, url, etc.
 
-Enable Row Level Security
-sql
-Copy code
+Replace:
+
+your_supabase_url
+
+your_supabase_anon_key
+
+your_email_service_api_key (SendGrid / Mailgun / SMTP)
+
+🗃 Supabase Database Setup
+Products Table (example)
+CREATE TABLE public.products (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES auth.users(id),
+  title text,
+  url text,
+  current_price numeric,
+  target_price numeric,
+  created_at timestamp with time zone DEFAULT now()
+);
+
+Enable RLS
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
-Policies (example)
-sql
-Copy code
-create policy "Users can view their own products"
-on public.products
-for select
-to authenticated
-using (auth.uid() = user_id);
-📦 Deployment (Vercel)
-Go to https://vercel.com/import
 
-Select your GitHub repo (DealDrop)
+Policies
+CREATE POLICY "Users can view their own products"
+ON public.products
+FOR SELECT
+TO authenticated
+USING (auth.uid() = user_id);
 
-Add the same env variables from your Supabase project into Vercel:
+CREATE POLICY "Users can insert their own products"
+ON public.products
+FOR INSERT
+TO authenticated
+WITH CHECK (auth.uid() = user_id);
 
-nginx
-Copy code
+CREATE POLICY "Users can update their own products"
+ON public.products
+FOR UPDATE
+TO authenticated
+USING (auth.uid() = user_id);
+
+📧 Email Price Alerts (Overview)
+
+Your app should do these steps:
+
+Store target_price for each product
+
+Regularly check price via Cron / Supabase Edge Function
+
+Compare current_price <= target_price
+
+Trigger email via email provider (SendGrid / Mailgun)
+
+📅 Scheduled Price Checks
+
+You can schedule price updates using:
+
+🕒 Supabase Scheduled Functions
+
+⏰ Vercel Cron Jobs
+
+✨ External Cron Service
+
+Example edge function snippet to check prices:
+
+import { createClient } from "@/utils/supabase/server";
+import fetchPrice from "@/utils/fetchPrice";
+import sendEmail from "@/utils/sendEmail";
+
+export default async function handler() {
+  const supabase = createClient();
+
+  const { data: products } = await supabase
+    .from("products")
+    .select("*");
+
+  for (let p of products) {
+    const latest = await fetchPrice(p.url);
+
+    if (latest <= p.target_price) {
+      await sendEmail({
+        to: p.user_email,
+        subject: `Price Drop: ${p.title}`,
+        text: `Price dropped to ${latest}!`
+      });
+    }
+
+    await supabase
+      .from("products")
+      .update({ current_price: latest })
+      .eq("id", p.id);
+  }
+}
+
+🏃 Run Locally
+npm run dev
+
+
+Open → http://localhost:3000
+
+🚀 Deployment (Vercel)
+
+Push to GitHub
+
+Import repo in Vercel
+
+Add Environment variables in Vercel:
+
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY
-Deploy — wait for build to finish
+EMAIL_PROVIDER_API_KEY
 
-Add Vercel domain to Supabase → Auth Settings → Redirect URLs
 
-🔑 Environment Variables
-Key	Description
-NEXT_PUBLIC_SUPABASE_URL	Supabase project URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY	Supabase public anon key
+Set Redirect URLs in Supabase Auth:
 
-Make sure these are set in both .env.local and Vercel dashboard before deployment.
+https://yourapp.vercel.app/auth/callback
 
-🧪 Testing
-You can test:
-✔ User signup / login
-✔ Add product
-✔ View price history
-✔ Remove product
-✔ Auth persistence
 
-📌 Notes
-Use Supabase policies to secure products per user. 
-GitHub
+Deploy
 
-Redirect URLs must be added in Supabase for production domain.
+👁‍🗨 Testing & Alerts
 
-Recharts must be installed (npm install recharts) before deploying.
+✔ Add products
+✔ Set target price
+✔ Confirm email alerts on price drops
+✔ Check charts update
+
+⚠️ Email Provider Setup (example SendGrid)
+
+Install:
+
+npm install @sendgrid/mail
+
+
+In utils/sendEmail.js:
+
+import sgMail from "@sendgrid/mail";
+
+sgMail.setApiKey(process.env.EMAIL_PROVIDER_API_KEY);
+
+export default async function sendEmail({ to, subject, text }) {
+  await sgMail.send({ to, from: "noreply@dealdrop.app", subject, text });
+}
+
+💡 Future Ideas
+
+Push notifications
+
+Webhooks
+
+Mobile apps
+
+Multi-store scraping
+
+AI price predictions
+
+🤝 Contributing
+
+Contribute via forks & PRs!
+Star ⭐ if you like it
