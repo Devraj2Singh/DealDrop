@@ -2,7 +2,7 @@
 
 DealDrop — A full-stack price tracking app that shows product price history, lets users track products, and sends email alerts when prices drop — built with Next.js App Router, Supabase, Recharts, and Tailwind CSS.
 
-Live Demo: (Your Vercel URL here)
+Live Demo: (https://deal-drop-henna.vercel.app/)
 
 🚀 Features
 
