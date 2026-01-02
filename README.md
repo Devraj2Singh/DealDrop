@@ -1,36 +1,101 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
-## Getting Started
+---
 
-First, run the development server:
+## 📁 Tech Stack
 
+- **Next.js (App Router)** — React framework for frontend + SSR  
+- **Supabase Auth & Database** — Backend auth + PostgreSQL  
+- **Tailwind CSS** — Utility-first styling  
+- **shadcn/ui** — UI component library  
+- **Lucide Icons** — SVG icons  
+- **Recharts** — Charting library
+
+---
+
+## 🧠 Getting Started (Local)
+
+### 1. Clone the repo
 ```bash
+git clone https://github.com/Devraj2Singh/DealDrop.git
+cd DealDrop
+2. Install Dependencies
+bash
+Copy code
+npm install
+# or
+yarn install
+# or
+pnpm install
+3. Create Supabase Project
+Go to https://app.supabase.com and create a new project.
+
+Grab the following from Supabase dashboard:
+✔ NEXT_PUBLIC_SUPABASE_URL
+✔ NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+4. Create .env.local
+Copy example and paste keys:
+
+ini
+Copy code
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+5. Run Dev Server
+bash
+Copy code
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Open http://localhost:3000 in your browser.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+🗂 Supabase Setup
+Database
+Create a table products with fields including id, user_id, price, url, etc.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+Enable Row Level Security
+sql
+Copy code
+ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
+Policies (example)
+sql
+Copy code
+create policy "Users can view their own products"
+on public.products
+for select
+to authenticated
+using (auth.uid() = user_id);
+📦 Deployment (Vercel)
+Go to https://vercel.com/import
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Select your GitHub repo (DealDrop)
 
-## Learn More
+Add the same env variables from your Supabase project into Vercel:
 
-To learn more about Next.js, take a look at the following resources:
+nginx
+Copy code
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+Deploy — wait for build to finish
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Add Vercel domain to Supabase → Auth Settings → Redirect URLs
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+🔑 Environment Variables
+Key	Description
+NEXT_PUBLIC_SUPABASE_URL	Supabase project URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY	Supabase public anon key
 
-## Deploy on Vercel
+Make sure these are set in both .env.local and Vercel dashboard before deployment.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+🧪 Testing
+You can test:
+✔ User signup / login
+✔ Add product
+✔ View price history
+✔ Remove product
+✔ Auth persistence
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+📌 Notes
+Use Supabase policies to secure products per user. 
+GitHub
+
+Redirect URLs must be added in Supabase for production domain.
+
+Recharts must be installed (npm install recharts) before deploying.
