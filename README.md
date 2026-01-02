@@ -1,207 +1,201 @@
-🍀 DealDrop
+Here’s a polished `README.md` you can drop into your repo and tweak as you like:
 
-DealDrop — A full-stack price tracking app that shows product price history, lets users track products, and sends email alerts when prices drop — built with Next.js App Router, Supabase, Recharts, and Tailwind CSS.
+```md
+# DealDrop
 
-Live Demo: (https://deal-drop-henna.vercel.app/)
+Track product prices from your favorite e‑commerce sites and get notified when they drop.  
+DealDrop is a full‑stack price tracking app built with **Next.js App Router**, **Supabase**, **Firecrawl**, and modern React tooling.
 
-🚀 Features
+---
 
-🔐 Google & Email Authentication
+## 🚀 Features
 
-🛍 Add / remove product URLs to track
+- 🔗 **Multi‑site tracking** – Paste a product URL (Amazon, Flipkart, etc.) and DealDrop will scrape the latest price.
+- 📉 **Automatic price updates** – A cron route periodically re‑scrapes products and stores price history.
+- 🔔 **Price‑drop alerts** – When a product’s price falls, users receive an email notification via Resend.
+- 📊 **Price history** – Each product keeps a full history of price checks in the `price_history` table.
+- 🔐 **Auth & RLS** – Supabase Auth with Google OAuth and row‑level security so users only see their own products.
+- 💅 **Modern UI** – Built with shadcn/ui components, lucide‑react icons, and responsive Tailwind CSS.
 
-📉 View price history with interactive charts
+---
 
-📧 Email Price Drop Alerts
+## 🧱 Tech Stack
 
-🛠 Modern UI with Tailwind CSS + shadcn/ui
+- **Framework:** Next.js (App Router, Server Components, Server Actions)
+- **Database & Auth:** Supabase (PostgreSQL, RLS, Auth, Admin API)
+- **Scraping:** Firecrawl (`@mendable/firecrawl-js`) for product data extraction
+- **Email:** Resend for transactional email alerts
+- **UI:** React, shadcn/ui, Tailwind CSS, lucide‑react
+- **Cron / Automation:** Route handler secured with a `CRON_SECRET` bearer token
 
-🔒 Secure per-user data with Supabase RLS
+---
 
-⚡ Instant price checks and notifications
+## 📦 Getting Started
 
-🧠 Tech Stack
-Layer	Tech
-Frontend	Next.js (App Router), React
-UI	Tailwind CSS, shadcn/ui, Recharts
-Backend	Supabase Auth & Database
-Alerts	Supabase Edge Functions / Cron / Email API
-⚙️ Local Setup
-1. Clone the Repo
+### 1. Clone and install
+
+```bash
 git clone https://github.com/Devraj2Singh/DealDrop.git
 cd DealDrop
+pnpm install   # or npm install / yarn install
+```
 
-2. Install Dependencies
-npm install
-# or
-yarn
-# or
-pnpm install
+### 2. Environment variables
 
-3. Create .env.local
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-EMAIL_PROVIDER_API_KEY=your_email_service_api_key
+Create a `.env.local` file in the project root:
 
+```env
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 
-Replace:
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
-your_supabase_url
+FIRECRAWL_API_KEY=your-firecrawl-api-key
 
-your_supabase_anon_key
+RESEND_API_KEY=your-resend-api-key
+RESEND_FROM_EMAIL="DealDrop Alerts <alerts@yourdomain.com>"
 
-your_email_service_api_key (SendGrid / Mailgun / SMTP)
+CRON_SECRET=some-strong-random-string
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
 
-🗃 Supabase Database Setup
-Products Table (example)
-CREATE TABLE public.products (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid REFERENCES auth.users(id),
-  title text,
-  url text,
-  current_price numeric,
-  target_price numeric,
-  created_at timestamp with time zone DEFAULT now()
-);
+Make sure you also configure the **Auth redirect URL** in Supabase to point to your Next.js callback route (e.g. `/auth/callback`) and enable **Google** provider.
 
-Enable RLS
-ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
+### 3. Database & policies
 
-Policies
-CREATE POLICY "Users can view their own products"
-ON public.products
-FOR SELECT
-TO authenticated
-USING (auth.uid() = user_id);
+In Supabase, create the core tables (simplified shapes):
 
-CREATE POLICY "Users can insert their own products"
-ON public.products
-FOR INSERT
-TO authenticated
-WITH CHECK (auth.uid() = user_id);
+- `products`
+  - `id` (uuid, primary key)
+  - `user_id` (uuid, references `auth.users.id`)
+  - `url` (text)
+  - `name` (text)
+  - `current_price` (numeric)
+  - `currency` (text)
+  - `image_url` (text)
+  - `created_at`, `updated_at` (timestamp)
 
-CREATE POLICY "Users can update their own products"
-ON public.products
-FOR UPDATE
-TO authenticated
-USING (auth.uid() = user_id);
+- `price_history`
+  - `id` (uuid, primary key)
+  - `product_id` (uuid, references `products.id`)
+  - `price` (numeric)
+  - `currency` (text)
+  - `checked_at` (timestamp, default `now()`)
 
-📧 Email Price Alerts (Overview)
+Enable **Row Level Security** and add policies so users can only read/write their own rows, for example:
 
-Your app should do these steps:
+```sql
+-- Products: users can view their own products
+alter table products enable row level security;
 
-Store target_price for each product
+create policy "Users can view their own products"
+  on products for select
+  using (auth.uid() = user_id);
 
-Regularly check price via Cron / Supabase Edge Function
+create policy "Users can insert their own products"
+  on products for insert
+  with check (auth.uid() = user_id);
 
-Compare current_price <= target_price
+create policy "Users can update their own products"
+  on products for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
 
-Trigger email via email provider (SendGrid / Mailgun)
+create policy "Users can delete their own products"
+  on products for delete
+  using (auth.uid() = user_id);
+```
 
-📅 Scheduled Price Checks
+(Adapt these to match your current schema.)
 
-You can schedule price updates using:
+### 4. Run the dev server
 
-🕒 Supabase Scheduled Functions
+```bash
+pnpm dev   # or npm run dev / yarn dev
+```
 
-⏰ Vercel Cron Jobs
+Visit `http://localhost:3000` and:
 
-✨ External Cron Service
+1. Sign in with Google.
+2. Paste a product URL into the form.
+3. Start tracking and see it appear under “Your Tracked Products”.
 
-Example edge function snippet to check prices:
+---
 
-import { createClient } from "@/utils/supabase/server";
-import fetchPrice from "@/utils/fetchPrice";
-import sendEmail from "@/utils/sendEmail";
+## 🔄 Cron price checks
 
-export default async function handler() {
-  const supabase = createClient();
+The app exposes a route handler (e.g. `/api/cron/price-check`) that:
 
-  const { data: products } = await supabase
-    .from("products")
-    .select("*");
+1. Validates a `Bearer` token header against `CRON_SECRET`.
+2. Uses a Supabase **service role** client (RLS bypass) to fetch all products.
+3. Calls `scrapeProduct(url)` from the Firecrawl‑based helper.
+4. Updates `products.current_price`, inserts into `price_history`, and triggers `sendPriceDropAlert` when `newPrice < oldPrice`.
 
-  for (let p of products) {
-    const latest = await fetchPrice(p.url);
+You can wire this up to:
 
-    if (latest <= p.target_price) {
-      await sendEmail({
-        to: p.user_email,
-        subject: `Price Drop: ${p.title}`,
-        text: `Price dropped to ${latest}!`
-      });
-    }
+- **Vercel Cron Jobs**
+- **GitHub Actions**
+- Any scheduler that can call a URL with a custom header.
 
-    await supabase
-      .from("products")
-      .update({ current_price: latest })
-      .eq("id", p.id);
-  }
-}
+Example header:
 
-🏃 Run Locally
-npm run dev
+```http
+Authorization: Bearer YOUR_CRON_SECRET
+```
 
+---
 
-Open → http://localhost:3000
+## ✉️ Price‑drop email alerts
 
-🚀 Deployment (Vercel)
+`sendPriceDropAlert` uses **Resend** to send a rich HTML email showing:
 
-Push to GitHub
+- Old price vs new price
+- Percentage drop and total savings
+- Product image and link
+- CTA to view all tracked products
 
-Import repo in Vercel
+Make sure `RESEND_FROM_EMAIL` is a verified sender/domain in your Resend dashboard.
 
-Add Environment variables in Vercel:
+---
 
-NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY
-EMAIL_PROVIDER_API_KEY
+## 📂 Project Structure (high level)
 
+```txt
+app/
+  page.tsx               # Home page, server component
+  action.ts              # Server actions (add product, etc.)
+  api/
+    cron/
+      price-check/route.ts  # Cron route for periodic checks
+components/
+  AddProductForm.tsx     # Client form, calls addProduct server action
+  AuthButton.tsx         # Auth UI
+  AuthModal.tsx          # Login modal with Google OAuth
+lib/
+  firecrawl.ts           # scrapeProduct helper using Firecrawl
+  email.ts               # sendPriceDropAlert function
+utils/
+  supabase/
+    client.ts            # Browser client
+    server.ts            # SSR/server actions client
+```
 
-Set Redirect URLs in Supabase Auth:
+(Adjust names/paths if your repo differs.)
 
-https://yourapp.vercel.app/auth/callback
+---
 
+## 🧪 Future Improvements
 
-Deploy
+- Charted price history per product (e.g. using a sparkline or full chart).
+- User‑defined target prices for alerts.
+- Support for more regional currencies.
+- Better error UI for scraper failures and validation.
 
-👁‍🗨 Testing & Alerts
+---
 
-✔ Add products
-✔ Set target price
-✔ Confirm email alerts on price drops
-✔ Check charts update
+## 🙌 Acknowledgements
 
-⚠️ Email Provider Setup (example SendGrid)
+Built by **Devraj Singh** as a learning and portfolio project using Next.js, Supabase, Firecrawl, and Resend.  
+Contributions, bug reports, and feature ideas are very welcome—feel free to open an issue or PR!
+```
 
-Install:
-
-npm install @sendgrid/mail
-
-
-In utils/sendEmail.js:
-
-import sgMail from "@sendgrid/mail";
-
-sgMail.setApiKey(process.env.EMAIL_PROVIDER_API_KEY);
-
-export default async function sendEmail({ to, subject, text }) {
-  await sgMail.send({ to, from: "noreply@dealdrop.app", subject, text });
-}
-
-💡 Future Ideas
-
-Push notifications
-
-Webhooks
-
-Mobile apps
-
-Multi-store scraping
-
-AI price predictions
-
-🤝 Contributing
-
-Contribute via forks & PRs!
-Star ⭐ if you like it
