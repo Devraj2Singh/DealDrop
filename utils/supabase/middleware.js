@@ -8,7 +8,7 @@ export async function updateSession(request) {
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         getAll() {
@@ -32,3 +32,6 @@ export async function updateSession(request) {
 
   return supabaseResponse
 }
+
+
+//curl.exe -X POST http://localhost:3000/api/cron/check-prices -H "Authorization: Bearer 86db9d33f14bd8ea0fccad593ecbab5c3e445d0a6b41243628bd3bb8034cd8ba"

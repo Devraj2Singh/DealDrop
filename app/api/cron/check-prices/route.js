@@ -1,13 +1,7 @@
-import { sendPriceDropAlert } from "@/lib/email";
-import { scrapeProduct } from "@/lib/firecrawl";
-import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-
-export async function GET() {
-  return NextResponse.json({
-    message: "Price check endpoint is working. Use POST to trigger",
-  });
-}
+import { createClient } from "@supabase/supabase-js";
+import { scrapeProduct } from "@/lib/firecrawl";
+import { sendPriceDropAlert } from "@/lib/email";
 
 export async function POST(request) {
   try {
@@ -18,7 +12,7 @@ export async function POST(request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    //Use service role to bypass RLS
+    // Use service role to bypass RLS
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -43,6 +37,7 @@ export async function POST(request) {
     for (const product of products) {
       try {
         const productData = await scrapeProduct(product.url);
+
         if (!productData.currentPrice) {
           results.failed++;
           continue;
@@ -72,14 +67,11 @@ export async function POST(request) {
           results.priceChanges++;
 
           if (newPrice < oldPrice) {
-            //Alert
-
             const {
               data: { user },
             } = await supabase.auth.admin.getUserById(product.user_id);
 
             if (user?.email) {
-              // Send Email
               const emailResult = await sendPriceDropAlert(
                 user.email,
                 product,
@@ -87,7 +79,7 @@ export async function POST(request) {
                 newPrice
               );
 
-              if(emailResult.success){
+              if (emailResult.success) {
                 results.alertsSent++;
               }
             }
@@ -102,12 +94,18 @@ export async function POST(request) {
     }
 
     return NextResponse.json({
-        success: true,
-        message: "Price check completed",
-        results,
+      success: true,
+      message: "Price check completed",
+      results,
     });
   } catch (error) {
-    console.error("Cron job error:",error);
-    return NextResponse.json({error: error.message}, {status:500});
+    console.error("Cron job error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
+}
+
+export async function GET() {
+  return NextResponse.json({
+    message: "Price check endpoint is working. Use POST to trigger.",
+  });
 }
