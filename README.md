@@ -1,4 +1,4 @@
-Here’s a polished `README.md` you can drop into your repo and tweak as you like:
+
 
 ```md
 # DealDrop
